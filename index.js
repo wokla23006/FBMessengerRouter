@@ -1,6 +1,5 @@
 const https  = require("https")
 const fs     = require("fs")
-const stream = require("stream")
 
 var login = require("facebook-chat-api")
 var tmp_file = "requests/request.txt"
@@ -33,7 +32,7 @@ login({email: "mswebbot@gmail.com", password: "sakjrhkwarfkjsbh"}, (err, api) =>
             if (!fs.exists("requests")) {
                 fs.mkdir("requests")
             }
-            
+
             fs.writeFileSync(tmp_file, "")
             
             res.on("data", (chunk) => {
