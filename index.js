@@ -1,55 +1,90 @@
-const https  = require("https")
-const fs     = require("fs")
-
+const fs  = require("fs")
 var login = require("facebook-chat-api")
-var tmp_file = "requests/request.txt"
 
-login({email: "mswebbot@gmail.com", password: "sakjrhkwarfkjsbh"}, (err, api) => {
-    if(err) return console.error(err);
- 
+const download = require("./download")
 
-    api.listen((err, message) => {
-        //var body = JSON.parse(message.body)
-        if (message == undefined) {
+class Sender {
+    constructor(api, threadID, parallel=5) {
+        this.api = api
+        this.threadID = threadID
+        this.files_to_send = []
+        this.shard = 0
+        this._done = false
+        this.parallel = parallel
+        this._theads_done=0
+        this._await_finish(this)
+     
+        for (var i=0; i<parallel; i++){
+            this._send_sync(this)
+        }
+    }
+
+    send(filename) {
+        this.files_to_send.push(filename)
+    }
+    
+    done() {
+        this._done = true
+    }
+
+    _await_finish(context) {
+        if (context._theads_done == context.parallel) {
+            context.api.sendMessage({
+                body: "done"
+            }, context.threadID)
+        }
+        else {
+            setTimeout(() => {context._await_finish(context)}, 1000)
+        }
+    }
+
+    _send_sync(context) {
+        var filename = context.files_to_send.pop()
+        console.log("Sending: " + filename)
+        
+        if (filename == undefined) {
+            if (context._done) {
+                context._theads_done++
+            } else {
+                setTimeout(() => {context._send_sync(context)}, 1000)
+            }
             return
         }
-        //console.log(message)
+        context.shard++
+        context.api.sendMessage({
+            body: context.shard,
+            attachment: fs.createReadStream(filename)
+        }, context.threadID, (err) => {context._send_sync(context)})
+    }
+
+}
+
+login({email: "mswebbot@gmail.com", password: "sakjrhkwarfkjsbh"}, (err, api) => {
+    
+    if(err) return console.error(err);
+
+    api.listen((err, event) => {
         
-        var body = message.body.split(",")
-        var host = body[0]
-        var path = body[1]
+        if (event == undefined) {
+            return
+        }
+        
+        var sender = new Sender(api, event.threadID)
+        
+        var url = event.body
+        console.log(url)
 
-        console.log(host + "->" + path)
-        var req = https.get(
-                {
-                    hostname: host, 
-                    path: path, 
-                    headers: {
-                        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/67.0.3396.99 Chrome/67.0.3396.99 Safari/537.36"
-                    }
-                }, 
-        (res) => {
-            if (!fs.exists("requests")) {
-                fs.mkdir("requests")
-            }
-
-            fs.writeFileSync(tmp_file, "")
-            
-            res.on("data", (chunk) => {
-                fs.appendFileSync(tmp_file, chunk)
+        download.shardedDownload(url, (dwnld) => {
+            dwnld.on("file", (filename) => {
+                console.log("Got: " + filename)
+                sender.send(filename)
             })
-            
-            res.on("end", () => {
-                console.log("Finished.")
-                api.sendMessage({
-                    body: "Done.",
-                    attachment: fs.createReadStream(tmp_file)
-                }, message.threadID)
+
+            dwnld.on("end", () => {
+                sender.done()
             })
         })
-        req.on("error", (err) => {
-            console.log(err.message)
-        })
-        req.end()
+
     });
+
 });
