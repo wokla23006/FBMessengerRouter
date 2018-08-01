@@ -40,8 +40,6 @@ class Sender {
 
     _send_sync(context) {
         var filename = context.files_to_send.pop()
-        console.log("Sending: " + filename)
-        
         if (filename == undefined) {
             if (context._done) {
                 context._theads_done++
@@ -50,6 +48,7 @@ class Sender {
             }
             return
         }
+        console.log("Sending: " + filename)
         context.shard++
         context.api.sendMessage({
             body: context.shard,
@@ -74,7 +73,15 @@ login({email: "mswebbot@gmail.com", password: "sakjrhkwarfkjsbh"}, (err, api) =>
         var url = event.body
         console.log(url)
 
-        download.shardedDownload(url, (dwnld) => {
+        download.shardedDownload(url, event.threadID, (dwnld, err) => {
+            
+            if (err) {
+                api.sendMessage({
+                    body: err.message
+                }, event.threadID)
+                return
+            }
+
             dwnld.on("file", (filename) => {
                 console.log("Got: " + filename)
                 sender.send(filename)
