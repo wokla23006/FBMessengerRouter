@@ -1,16 +1,15 @@
 const fs = require("fs")
-const https  = require("https")
-const http   = require("http" )
-const EventEmitter = require('events');
+const https = require("https")
+const http = require("http" )
+const EventEmitter = require('events')
 
-const gen_shard = function(prefix, id) {
-    return "data/" + prefix + id + ".txt"
+const gen_shard = function(folder, id) {
+    return folder + "/" + id + ".shard"
 }
 
-const shardedDownload = function(url, callback, filename_prefix="shard-") {
+const shardedDownload = function(url, folder, callback) {
     var downloadEvent = new EventEmitter()
-    callback(downloadEvent)
-
+    
     var shards_list = []
     var protocol = url.split(":")[0]
     
@@ -22,13 +21,26 @@ const shardedDownload = function(url, callback, filename_prefix="shard-") {
         protocol = https
         break
         default:
-        console.log("No protocol. Must be one of ['http', 'https']")
-        break
+        callback(null, Error("Error: No protocol. Must be one of ['http', 'https']"))
+        return
+    }
+
+    callback(downloadEvent)
+    
+    folder = "./data/" + folder
+    
+    if (!fs.existsSync('./data/')) {
+        fs.mkdirSync("./data/")
+    }
+    
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder)
     }
 
     var req = protocol.request(url, (res) => {
         
-        var filename = gen_shard(filename_prefix, 0)
+        var filename = gen_shard(folder, 0)
+
         shards_list.push(filename)
         var file = fs.createWriteStream(filename)
         
@@ -44,7 +56,7 @@ const shardedDownload = function(url, callback, filename_prefix="shard-") {
                 
                 size = 0
                 shard++
-                filename = gen_shard(filename_prefix, shard)
+                filename = gen_shard(folder, shard)
                 file = fs.createWriteStream(filename)
             }
         })
@@ -54,16 +66,15 @@ const shardedDownload = function(url, callback, filename_prefix="shard-") {
             downloadEvent.emit("file", filename)
             downloadEvent.emit("end")
         })
-
         
         res.on("error", (err) => {
-            console.log(err)
+            console.log("RESPONSE: " + err.message)
         })
 
     })
     
     req.on("error", (err) => {
-        console.log(err)
+        console.log("REQUEST: " + err.message)
     })
     
     req.end()
