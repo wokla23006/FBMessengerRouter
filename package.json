@@ -1,0 +1,19 @@
+{
+  "name": "fb_messenger_router",
+  "version": "1.0.0",
+  "description": "Downloads files through fb messenger to avoid mobile data charges.",
+  "main": "index.js",
+  "dependencies": {
+    "facebook-chat-api": "^1.6.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://bcovas@vs-ssh.visualstudio.com:22/fb_messenger_router/_ssh/fb_messenger_router"
+  },
+  "author": "Bernardo Covas (bernardo.covas@hotmail.com)",
+  "license": "ISC"
+}
