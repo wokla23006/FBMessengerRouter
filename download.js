@@ -31,10 +31,10 @@ const shardedDownload = function(url, folder, callback) {
 
     callback(downloadEvent)
     
-    folder = "./data/" + folder
+    folder = "./uploads/" + folder
     
-    if (!fs.existsSync('./data/')) {
-        fs.mkdirSync("./data/")
+    if (!fs.existsSync('./uploads/')) {
+        fs.mkdirSync("./uploads/")
     }
     
     if (!fs.existsSync(folder)) {

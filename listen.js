@@ -17,7 +17,7 @@ class ThreadHandler {
         this._new_message(this, message)
     }
 
-    _watcher(thread, threadID, joined_function) {
+    _watcher(thread, dir, joined_function) {
         console.log(JSON.stringify(thread))
 
         thread["attatchments"].sort()
@@ -28,7 +28,8 @@ class ThreadHandler {
                 JSON.stringify(thread["attatchments"]) == 
                 JSON.stringify(thread["downloaded"])
             ) {
-            var payload_name = './' + threadID + "/payload"
+
+            var payload_name = dir + "/payload"
 
             if (fs.existsSync(payload_name)) {
                 fs.unlinkSync(payload_name)
@@ -51,19 +52,30 @@ class ThreadHandler {
                 "done": false
             }
         }
+
+        var download_dir = "./downloads"
+        var thread_dir = download_dir + '/' + threadID
+
+        if (!fs.existsSync(download_dir)) {
+            fs.mkdirSync(download_dir)
+        }
+
+        if (!fs.existsSync(thread_dir)) {
+            fs.mkdirSync(thread_dir)
+        }
         
         if (message.body == "done") {
             context.threads[threadID]["done"] = true
-            context._watcher(context.threads[threadID], threadID, () => {context.threads[threadID] = []})
+            context._watcher(context.threads[threadID], thread_dir, () => {context.threads[threadID] = []})
         } else if(message.attachments != undefined) {
             var attch = message.attachments[0]
             
-            var filename = "./" + threadID + "/" + attch.filename
+            var filename = thread_dir + "/" + attch.filename
             context.threads[threadID]["attatchments"].push(filename)
 
             download.getAttachment(attch.url, filename, (filename) => {
                 context.threads[threadID]["downloaded"].push(filename)
-                context._watcher(context.threads[threadID], threadID, () => {context.threads[threadID] = []})
+                context._watcher(context.threads[threadID], thread_dir, () => {context.threads[threadID] = []})
             })
         }
     }
