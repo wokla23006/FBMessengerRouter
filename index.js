@@ -3,6 +3,11 @@ var login = require("facebook-chat-api")
 
 const download = require("./download")
 
+var credentials = JSON.parse(fs.readFileSync("./credentials.json"))
+credentials = credentials[0]
+var email = credentials["username"]
+var psswd = credentials["password"]
+
 class Sender {
 
     constructor(api, threadID, parallel=5) {
@@ -56,14 +61,7 @@ class Sender {
             attachment: fs.createReadStream(filename)
         }, context.threadID, (err) => {context._send_sync(context)})
     }
-
 }
-
-var email = "mswebbot@gmail.com"
-var psswd = "sakjrhkwarfkjsbh"
-
-email = "mbot.receiver@gmail.com"
-psswd = "sdasdfgdsfgaf34t937hnx9027y"
 
 login({email: email, password: psswd}, (err, api) => {
     
