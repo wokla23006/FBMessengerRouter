@@ -1,67 +1,94 @@
+import os
+import queue
+import threading
+import json
+
+import wget
 import fbchat
 import requests
-import threading
-import queue
-import os
-import wget
 
-email = "mbot.receiver@gmail.com"
-psswd = "sdasdfgdsfgaf34t937hnx9027y"
+with open("./credentials.json") as c:
+    credentials = json.load(c)
+email = credentials["username"]
+psswd = credentials["password"]
 
-email = "bernardo.covas@hotmail.com"
-psswd = "uoT5f8y4johsIJDECXMBHL7j"
+#email = "mbot.receiver@gmail.com"
+#psswd = "sdasdfgdsfgaf34t937hnx9027y"
 
+#email = "bernardo.covas@hotmail.com"
+#psswd = "uoT5f8y4johsIJDECXMBHL7j"
 
 class Downloader(fbchat.Client):
 
-    downloaded = []
-
-    def _cleanFirstRequest(self, dirty_request):
-        
-        i = dirty_request.find("document.location.replace")
-        dirty_request = dirty_request[i:]
-        i = dirty_request.find('");')
-        dirty_request = dirty_request[:i]
-        dirty_request = dirty_request.replace('document.location.replace("', "")
-        dirty_request = dirty_request.replace("\\", "")
-        return dirty_request
+    files   = []
+    threads = []
 
     def onMessage(self, mid, author_id, message_object, thread_id, thread_type, ts, metadata, msg, **kwargs):
         print("Got message.")
         
-        dirname = "./" + thread_id
+        dirname = "./downloads/" + thread_id
         assert isinstance(message_object, fbchat.models.Message )
 
         if message_object.text == "done":
             print("Done.")
-            with open(dirname + "/payload", "wb") as p:
-                self.downloaded.sort()
-                for download_filename in self.downloaded:
-                    with open(download_filename, "rb") as f:
-                        p.write(f.read())
+            for t in self.threads:
+                t.join()
+
+            print("Joining shards...")
+            join_files("./storage/Downloads", self.files)
+            print("Done Joining.")
             return
 
         if len(message_object.attachments) > 0:
-        
+            
             attch = message_object.attachments[0]
+            assert len(message_object.attachments) == 1
             assert isinstance(attch, fbchat.models.FileAttachment)
-            filename = dirname + "/" + attch.name
 
-            html_new_request = requests.get(attch.url, allow_redirects=True).text
-            url = self._cleanFirstRequest(html_new_request)
+            filename = dirname + "/" + attch.name
 
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
 
-            if (os.path.exists(filename)):
-                os.remove(filename)
-
-            wget.download(url, bar=None, out=filename)
-            self.downloaded.append(filename)
-
-            print(url)
+            t = threading.Thread(target=handle_attach, args=(attch.url, filename))
+            t.start()
+            self.threads.append(t)
+            self.files.append(filename)
             
         return
+
+def handle_attach(url, filename:str):
+
+    def _clean_url(dirty_url: str):
+        
+        i = dirty_url.find("document.location.replace")
+        dirty_url = dirty_url[i:]
+        i = dirty_url.find('");')
+        dirty_url = dirty_url[:i]
+        dirty_url = dirty_url.replace('document.location.replace("', "")
+        dirty_url = dirty_url.replace("\\", "")
+        return dirty_url
+
+    dirty_url = requests.get(url, allow_redirects=True).text
+    url = _clean_url(dirty_url)
+
+    print("Downloading", filename)
+    wget.download(url, bar=None, out=filename)
+        
+    return
+
+def join_files(out:str, files_list: []):
+
+    if not os.path.exists(out):
+        os.makedirs(out)
+
+    with open(out + "/payload", "wb") as p:
+        files_list.sort()
+        for download_filename in files_list:
+            with open(download_filename, "rb") as f:
+                p.write(f.read())
+
+    return
 
 client = Downloader(email, psswd)
 client.listen()
