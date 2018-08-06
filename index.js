@@ -4,6 +4,7 @@ var login = require("facebook-chat-api")
 const download = require("./download")
 
 class Sender {
+
     constructor(api, threadID, parallel=5) {
         this.api = api
         this.threadID = threadID
@@ -58,7 +59,13 @@ class Sender {
 
 }
 
-login({email: "mswebbot@gmail.com", password: "sakjrhkwarfkjsbh"}, (err, api) => {
+var email = "mswebbot@gmail.com"
+var psswd = "sakjrhkwarfkjsbh"
+
+email = "mbot.receiver@gmail.com"
+psswd = "sdasdfgdsfgaf34t937hnx9027y"
+
+login({email: email, password: psswd}, (err, api) => {
     
     if(err) return console.error(err);
 

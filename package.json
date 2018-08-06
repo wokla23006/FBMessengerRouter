@@ -4,7 +4,9 @@
   "description": "Downloads files through fb messenger to avoid mobile data charges.",
   "main": "index.js",
   "dependencies": {
-    "facebook-chat-api": "^1.6.0"
+    "facebook-chat-api": "^1.6.0",
+    "node-html-parser": "^1.1.8",
+    "request": "^2.87.0"
   },
   "devDependencies": {},
   "scripts": {
