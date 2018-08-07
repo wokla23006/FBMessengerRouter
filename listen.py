@@ -37,6 +37,10 @@ class Downloader(fbchat.Client):
             print("Joining shards...")
             join_files("./storage/Downloads", self.files)
             print("Done Joining.")
+            
+            self.files = []
+            self.threads = []
+            
             return
 
         if len(message_object.attachments) > 0:
