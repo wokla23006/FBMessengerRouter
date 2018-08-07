@@ -27,6 +27,9 @@ class Downloader(fbchat.Client):
         print("Got message.")
         
         dirname = "./downloads/" + thread_id
+        if not os.path.exists("./downloads"):
+            os.mkdir("./downloads")
+        
         assert isinstance(message_object, fbchat.models.Message )
 
         if message_object.text == "done":
