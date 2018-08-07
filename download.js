@@ -55,10 +55,10 @@ const shardedDownload = function(url, folder, callback) {
             size += chunk.length
 
             if (size > max_size) {
-                var prev_file = file
+                
                 var prev_file_name = filename
-                prev_file.write(chunk)
-                prev_file.end(() => {
+                file.write(chunk)
+                file.end(() => {
                     downloadEvent.emit("file", prev_file_name)
                 })
                 
@@ -115,6 +115,7 @@ const getAttachment = function(url, filename, callback) {
             body.indexOf(fist_search_value),
             body.lastIndexOf(second_search_value)
         ).replace(fist_search_value, "").replace(second_search_value, "").split("\\/").join("/")
+        
         console.log(new_url)
         request({
             url: new_url,
