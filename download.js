@@ -5,7 +5,6 @@ const http = require("http" )
 const EventEmitter = require('events')
 
 const request = require("request")
-const parse   = require("node-html-parser").parse
 
 const gen_shard = function(folder, id) {
     return folder + "/" + id + ".shard"
@@ -58,8 +57,8 @@ const shardedDownload = function(url, folder, callback) {
             if (size > max_size) {
                 var prev_file = file
                 var prev_file_name = filename
-                file.write(chunk, () => {
-                    prev_file.close()
+                prev_file.write(chunk)
+                prev_file.end(() => {
                     downloadEvent.emit("file", prev_file_name)
                 })
                 
@@ -73,9 +72,10 @@ const shardedDownload = function(url, folder, callback) {
         })
 
         res.on("end", () => {
-            file.close()
-            downloadEvent.emit("file", filename)
-            downloadEvent.emit("end")
+            file.end(() => {
+                downloadEvent.emit("file", filename)
+                downloadEvent.emit("end")
+            })
         })
         
         res.on("error", (err) => {

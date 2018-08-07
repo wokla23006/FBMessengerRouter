@@ -3,7 +3,7 @@ var login = require("facebook-chat-api")
 
 const download = require("./download")
 
-var credentials = JSON.parse(fs.readFileSync("./credentials.json"))
+var credentials = JSON.parse(fs.readFileSync("./server_credentials.json"))
 credentials = credentials[0]
 var email = credentials["username"]
 var psswd = credentials["password"]
