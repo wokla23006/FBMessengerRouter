@@ -35,7 +35,7 @@ class Downloader(fbchat.Client):
                 t.join()
 
             print("Joining shards...")
-            join_files("~/storage/Downloads", self.files)
+            join_files("~/storage/downloads", self.files)
             print("Done Joining.")
             
             self.files = []
