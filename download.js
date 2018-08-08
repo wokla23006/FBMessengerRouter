@@ -7,6 +7,7 @@ const EventEmitter = require('events')
 const request = require("request")
 
 const gen_shard = function(folder, id) {
+    id = ("00000" + id).slice(-5)
     return folder + "/" + id + ".shard"
 }
 
