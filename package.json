@@ -5,7 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "facebook-chat-api": "^1.6.0",
-    "request": "^2.87.0"
+    "request": "^2.87.0",
+    "youtube-dl": "^1.12.2"
   },
   "devDependencies": {},
   "scripts": {
