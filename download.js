@@ -87,6 +87,7 @@ const chunkStream = function(stream, folder) {
     stream.on("end", () => {
         file.end(() => {
             downloadEvent.emit("file", filename)
+            console.log("Done.")
             downloadEvent.emit("end")
         })
     })
