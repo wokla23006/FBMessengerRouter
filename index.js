@@ -1,4 +1,5 @@
 const fs  = require("fs")
+const events = require("events")
 var login = require("facebook-chat-api")
 
 const download = require("./download")
@@ -11,10 +12,10 @@ var psswd = credentials["password"]
 class Sender {
 
     constructor(api, threadID, parallel=5) {
+        this.status = new events.EventEmitter()
         this.api = api
         this.threadID = threadID
         this.files_to_send = []
-        this.shard = 0
         this._done = false
         this.parallel = parallel
         this._theads_done=0
@@ -46,6 +47,7 @@ class Sender {
 
     _send_sync(context) {
         var filename = context.files_to_send.pop()
+
         if (filename == undefined) {
             if (context._done) {
                 context._theads_done++
@@ -54,12 +56,16 @@ class Sender {
             }
             return
         }
+
         console.log("Sending: " + filename)
-        context.shard++
         context.api.sendMessage({
-            body: context.shard,
+            body: "",
             attachment: fs.createReadStream(filename)
-        }, context.threadID, (err) => {context._send_sync(context)})
+        }, context.threadID, (err) => {
+            if (err) {
+                context.status.emit("error", [err.message])
+            }
+        })
     }
 }
 
@@ -69,11 +75,20 @@ login({email: email, password: psswd}, (err, api) => {
 
     api.listen((err, event) => {
         
+        var sendMessage = function(msg) {
+            api.sendMessage({
+                body: msg
+            }, event.threadID)
+        }
+        
         if (event == undefined) {
             return
         }
         
         var sender = new Sender(api, event.threadID)
+        sender.status.on("error", (msg) => {
+            sendMessage(msg)
+        })
         
         var url = event.body
         console.log(url)
@@ -81,11 +96,13 @@ login({email: email, password: psswd}, (err, api) => {
         download.shardedDownload(url, event.threadID, (dwnld, err) => {
             
             if (err) {
-                api.sendMessage({
-                    body: err.message
-                }, event.threadID)
+                sendMessage(err.message)
                 return
             }
+
+            dwnld.on("info", (msg) => {
+                sendMessage(msg)
+            })
 
             dwnld.on("file", (filename) => {
                 console.log("Got: " + filename)
