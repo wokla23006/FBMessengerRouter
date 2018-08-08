@@ -114,5 +114,5 @@ def join_files(out:str, files_list: []):
 
     return
 
-client = Downloader(email, psswd, logging_level=0)
+client = Downloader(email, psswd, logging_level=50)
 client.listen()
