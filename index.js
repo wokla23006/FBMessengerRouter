@@ -64,6 +64,8 @@ class Sender {
         }, context.threadID, (err) => {
             if (err) {
                 context.status.emit("error", [err.message])
+            } else {
+                context._send_sync(context)
             }
         })
     }
