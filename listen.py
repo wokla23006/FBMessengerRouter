@@ -25,7 +25,6 @@ class Downloader(fbchat.Client):
     threads = []
 
     def onMessage(self, mid, author_id, message_object, thread_id, thread_type, ts, metadata, msg, **kwargs):
-        print("Got message.")
         
         dirname = "./downloads/" + thread_id
         if not os.path.exists("./downloads"):
