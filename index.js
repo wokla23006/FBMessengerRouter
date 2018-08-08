@@ -111,6 +111,11 @@ login({email: email, password: psswd}, (err, api) => {
                 sender.send(filename)
             })
 
+            dwnld.on("error", (err) => {
+                sendMessage(err.message)
+                sender.done()
+            })
+
             dwnld.on("end", () => {
                 sender.done()
             })

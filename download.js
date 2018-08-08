@@ -32,7 +32,7 @@ const shardedDownload = function(url, folder, callback) {
         protocol = https
         break
         default:
-        callback(null, Error("Error: No protocol. Must be one of ['http', 'https']"))
+        callback(null, Error("No protocol. Must be one of ['http', 'https']"))
         return
     }
 
@@ -44,16 +44,15 @@ const shardedDownload = function(url, folder, callback) {
         return
     }
     
-    var downloadEvent = null
     var req = protocol.request(url, (res) => {
         downloadEvent = chunkStream(res, folder)
+        callback(downloadEvent)
     })
     
-    callback(downloadEvent)
     req.on("error", (err) => {
-        downloadEvent.emit("error", [err.message])
+        callback(null, err)
     })
-
+    
     req.end()
 }
 
@@ -98,6 +97,7 @@ const chunkStream = function(stream, folder) {
     
     stream.on("error", (err) => {
         console.log("RESPONSE: " + err.message)
+        downloadEvent.emit("error", [err.message])
     })
 
     return downloadEvent
