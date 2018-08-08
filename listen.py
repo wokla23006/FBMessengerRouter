@@ -89,6 +89,10 @@ def handle_attach(url, filename:str):
 
     while True:
         print("Downloading", filename)
+
+        if os.path.exists(filename):
+            os.remove(filename)
+
         try:
             wget.download(url, bar=None, out=filename)
         except Exception:
@@ -111,6 +115,11 @@ def join_files(out:str, files_list: []):
             with open(download_filename, "rb") as f:
                 p.write(f.read())
 
+    for file in files_list:
+        print("Deleting: " + file)
+        os.remove(file)
+
+    print("Done.")
     return
 
 client = Downloader(email, psswd, logging_level=50)
