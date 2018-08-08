@@ -1,4 +1,5 @@
 import os
+import time
 import queue
 import threading
 import json
@@ -76,12 +77,28 @@ def handle_attach(url, filename:str):
         dirty_url = dirty_url.replace("\\", "")
         return dirty_url
 
-    dirty_url = requests.get(url, allow_redirects=True).text
+    while True:
+        try:
+            dirty_url = requests.get(url, allow_redirects=True).text
+        except Exception:
+            print("Failed getting attatchment: " + filename + ". Retrying...")
+            time.sleep(5)
+            continue
+        break
+
     url = _clean_url(dirty_url)
 
-    print("Downloading", filename)
-    wget.download(url, bar=None, out=filename)
-        
+    while True:
+        print("Downloading", filename)
+        try:
+            wget.download(url, bar=None, out=filename)
+        except Exception:
+            print("Failed downloading: " + filename + ". Retrying...")
+            time.sleep(5)
+            continue
+        break
+    print("Downloaded " + filename)
+
     return
 
 def join_files(out:str, files_list: []):
@@ -97,5 +114,5 @@ def join_files(out:str, files_list: []):
 
     return
 
-client = Downloader(email, psswd)
+client = Downloader(email, psswd, logging_level=0)
 client.listen()
