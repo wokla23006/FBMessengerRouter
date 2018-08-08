@@ -5,6 +5,7 @@ const http = require("http" )
 const EventEmitter = require('events')
 
 const request = require("request")
+var youtubedl = require("youtube-dl")
 
 const gen_shard = function(folder, id) {
     id = ("00000" + id).slice(-5)
@@ -12,10 +13,16 @@ const gen_shard = function(folder, id) {
 }
 
 const shardedDownload = function(url, folder, callback) {
-    var downloadEvent = new EventEmitter()
     
-    var shards_list = []
     var protocol = url.split(":")[0]
+    folder = "./uploads/" + folder
+    
+    if (!fs.existsSync('./uploads/')) {
+        fs.mkdirSync("./uploads/")
+    }
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder)
+    }
     
     switch (protocol){
         case "http":
@@ -29,67 +36,66 @@ const shardedDownload = function(url, folder, callback) {
         return
     }
 
-    callback(downloadEvent)
-    
-    folder = "./uploads/" + folder
-    
-    if (!fs.existsSync('./uploads/')) {
-        fs.mkdirSync("./uploads/")
+    if (url.indexOf("youtube.com") > -1) {
+        var stream = youtubedl(url)
+        var downloadEvent = chunkStream(stream, folder)
+        callback(downloadEvent)
+        downloadEvent.emit("info", ["Downloading youtube video..."])
+        return
     }
     
-    if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder)
-    }
 
     var req = protocol.request(url, (res) => {
-        
-        var filename = gen_shard(folder, 0)
-
-        shards_list.push(filename)
-        var file = fs.createWriteStream(filename)
-        
-        var shard = 0
-        var size = 0
-        var max_size = 20 * 1000 * 1000
-
-        res.on("data", (chunk) => {
-            size += chunk.length
-
-            if (size > max_size) {
-                
-                var prev_file_name = filename
-                file.write(chunk)
-                file.end(() => {
-                    downloadEvent.emit("file", prev_file_name)
-                })
-                
-                size = 0
-                shard++
-                filename = gen_shard(folder, shard)
-                file = fs.createWriteStream(filename)
-            } else {
-                file.write(chunk)
-            }
-        })
-
-        res.on("end", () => {
-            file.end(() => {
-                downloadEvent.emit("file", filename)
-                downloadEvent.emit("end")
-            })
-        })
-        
-        res.on("error", (err) => {
-            console.log("RESPONSE: " + err.message)
-        })
-
+        var downloadEvent = chunkStream(res, folder)
+        callback(downloadEvent)
     })
-    
-    req.on("error", (err) => {
-        console.log("REQUEST: " + err.message)
-    })
-    
+
     req.end()
+}
+
+const chunkStream = function(stream, folder) {
+    
+    var downloadEvent = new EventEmitter()
+    var filename = gen_shard(folder, 0)
+    var file = fs.createWriteStream(filename)
+
+    
+    var shard = 0
+    var size = 0
+    var max_size = 20 * 1000 * 1000
+
+    stream.on("data", (chunk) => {
+        size += chunk.length
+
+        if (size > max_size) {
+            
+            var prev_file_name = filename
+            file.write(chunk)
+            file.end(() => {
+                downloadEvent.emit("file", prev_file_name)
+            })
+            
+            size = 0
+            shard++
+            filename = gen_shard(folder, shard)
+            file = fs.createWriteStream(filename)
+        } else {
+            file.write(chunk)
+        }
+    })
+
+    stream.on("end", () => {
+        file.end(() => {
+            downloadEvent.emit("file", filename)
+            downloadEvent.emit("end")
+        })
+    })
+    
+    stream.on("error", (err) => {
+        console.log("RESPONSE: " + err.message)
+    })
+
+    return downloadEvent
 }
 
 const getAttachment = function(url, filename, callback) {
