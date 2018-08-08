@@ -44,10 +44,14 @@ const shardedDownload = function(url, folder, callback) {
         return
     }
     
-
+    var downloadEvent = null
     var req = protocol.request(url, (res) => {
-        var downloadEvent = chunkStream(res, folder)
-        callback(downloadEvent)
+        downloadEvent = chunkStream(res, folder)
+    })
+    
+    callback(downloadEvent)
+    req.on("error", (err) => {
+        downloadEvent.emit("error", [err.message])
     })
 
     req.end()
